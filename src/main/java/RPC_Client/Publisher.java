@@ -1,3 +1,4 @@
+package RPC_Client;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQBasicProperties;
@@ -23,10 +24,12 @@ public class Publisher {
     public static String corrId;
     public static String EXCHANGE_TYPE;
     public static String EXCHANGE_NAME;
+    public static String ROUTING_KEY;
     static {
         try{
-            EXCHANGE_TYPE = "direct";
-            EXCHANGE_NAME = "EX1";
+            EXCHANGE_TYPE = "topic";
+            EXCHANGE_NAME = "topic_ex";
+            ROUTING_KEY = "RPC";
             connectionFactory = new ConnectionFactory();
             connectionFactory.setHost("localhost");
             connection = connectionFactory.newConnection("RPC-Client");
@@ -36,14 +39,20 @@ public class Publisher {
             message = "Hi I am RPC Client";
         }catch (Exception exception){
             exception.printStackTrace();
+        }finally{
+            System.out.println("Configured RPC-Publisher ......");
         }
     }
     public static void main(String[] args) {
         try{
             amqBasicProperties = new AMQP.BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
+            printLine("Declaring Exchange Type and Exchange Name ......");
             channel.exchangeDeclare(EXCHANGE_NAME,EXCHANGE_TYPE);
-            channel.basicPublish(EXCHANGE_NAME,"", (AMQP.BasicProperties) amqBasicProperties, message.getBytes("UTF-8"));
-            channel.basicConsume(replyQueueName,true,new DefaultConsumer(channel){
+            printLine("Publishing Message to RPC_Server ......");
+            channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY, (AMQP.BasicProperties) amqBasicProperties, message.getBytes("UTF-8"));
+            printLine("Message Sent - "+message);
+            printLine("Waiting for reply ...... ");
+            channel.basicConsume(replyQueueName, true, new DefaultConsumer(channel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws UnsupportedEncodingException {
                     if (properties.getCorrelationId().equals(corrId)) {
@@ -52,9 +61,15 @@ public class Publisher {
                     }
                 }
             });
+            System.out.println("Press Enter to Exit ...");
+            connection.close();
         }catch (Exception exception){
             exception.printStackTrace();
         }
 
+    }
+
+    public static void printLine(String string){
+        System.out.println(string);
     }
 }
