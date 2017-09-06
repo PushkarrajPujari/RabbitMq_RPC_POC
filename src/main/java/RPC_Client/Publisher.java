@@ -4,6 +4,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQBasicProperties;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Scanner;
 import java.util.UUID;
 
 
@@ -62,6 +63,7 @@ public class Publisher {
                 }
             });
             System.out.println("Press Enter to Exit ...");
+            new Scanner(System.in).nextLine();
             connection.close();
         }catch (Exception exception){
             exception.printStackTrace();
